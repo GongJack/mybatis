@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+<mapper namespace="cn.itcast.mybatis.mapper.UserMapper" >
+
+        <!--自定义映射关系
+            type:结果集的封装类型   id: 唯一标识(不要省,提高性能)
+            autoMapping:开启自动匹配,如果开启了驼峰匹配,就以驼峰匹配的形式进行匹配
+            result:其他非主键普通字段
+                column:表中的字段名   property:对应的java属性名
+        -->
+    <resultMap id="userMap" type="User" autoMapping="true">
+        <id column="id" property="id"></id>
+        <result column="user_name" property="userName"/>
+    </resultMap>
+
+
+    <select id="queryUserById" resultType="User">
+      SELECT * from tb_user where id = #{id}
+    </select>
+
+    <select id="queryNameByLike" resultType="User">
+      SELECT * from tb_user where Name like '%' #{name} '%'
+    </select>
+
+    <select id="queryUserAll" resultType="User">
+      SELECT * from ${tableName}
+    </select>
+    
+    <insert id="insertUser" parameterType="User" useGeneratedKeys="true" keyColumn="id" keyProperty="id">
+        insert into tb_user
+        (<include refid="UserCommonSQL.commonSql"/>)
+        VALUES (#{userName},#{password},#{name},#{age},#{sex},#{birthday},NOW(),NOW())
+    </insert>
+
+    <update id="updateUser" parameterType="User">
+        UPDATE tb_user
+		SET
+		 user_name = #{userName},
+		 password = #{password},
+		 name = #{name},
+		 age = #{age},
+		 sex = #{sex},
+		 birthday = #{birthday},
+		 updated = NOW()
+		WHERE
+			(id = #{id});
+
+    </update>
+
+    <delete id="deleteUserById" parameterType="long">
+      DELETE FROM tb_user WHERE id = #{id}
+    </delete>
+
+
+
+        <!--           动态sql           -->
+    <select id="queryUserListLikeUserName" resultType="user">
+        select * from tb_user where sex =1
+        <if test="name!=null and name.trim()!=''">
+          and name like '%' #{name} '%'
+        </if>
+    </select>
+
+    <select id="queryUserListLikeUserNameOrAge" resultType="user">
+      select * from tb_user
+      <where>
+          <choose>
+              <when test="userName!=null and userName.trim()!=''">
+                  and user_name like "%" #{userName} "%"
+              </when>
+              <when test="age!=null">
+                  and age =#{age}
+              </when>
+              <otherwise>
+                  and user_name='zhangsan'
+              </otherwise>
+          </choose>
+      </where>
+
+    </select>
+
+    <update id="updateUserSelective" parameterType="user">
+        update tb_user
+        <set>
+            <if test="userName!=null and userName.trim()!=''">user_name = #{userName},</if>
+            <if test="password!=null and password.trim()!=''">password = #{password},</if>
+            <if test="name!=null and name.trim()!=''">name = #{name},</if>
+            <if test="age!=null">age = #{age},</if>
+            <if test="sex!=null">sex = #{sex}</if>
+        </set>
+        WHERE
+        id = #{id};
+    </update>
+
+    <select id="queryUserListByIds" resultType="user">
+        select * from tb_user where id in
+        <foreach collection="ids" item="id" separator="," open="(" close=")">
+            #{id}
+        </foreach>
+    </select>
+
+</mapper>
